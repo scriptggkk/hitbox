@@ -1,5 +1,5 @@
--- Functional Hitbox Expansion Script (Educational Purposes Only)
--- This script expands player hitboxes so interactions (like shots) will register on the expanded area
+-- Functional Hitbox Expansion Script with Damage Redirection
+-- This script expands player hitboxes and redirects any hits to the expanded area to the actual player
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -15,8 +15,8 @@ ScreenGui.Parent = game.CoreGui
 -- Main Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 300, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
+MainFrame.Size = UDim2.new(0, 300, 0, 400)  -- Increased height for target list
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
 MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -98,46 +98,44 @@ ToggleIndicator.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
 ToggleIndicator.BorderSizePixel = 0
 ToggleIndicator.Parent = ToggleButton
 
--- Size Slider
+-- Size Input (Text Box instead of slider)
 local SizeFrame = Instance.new("Frame")
 SizeFrame.Name = "SizeFrame"
-SizeFrame.Size = UDim2.new(1, 0, 0, 70)
+SizeFrame.Size = UDim2.new(1, 0, 0, 50)
 SizeFrame.Position = UDim2.new(0, 0, 0, 60)
 SizeFrame.BackgroundTransparency = 1
 SizeFrame.Parent = ContentFrame
 
 local SizeLabel = Instance.new("TextLabel")
 SizeLabel.Name = "SizeLabel"
-SizeLabel.Size = UDim2.new(1, 0, 0, 20)
+SizeLabel.Size = UDim2.new(0.5, 0, 1, 0)
 SizeLabel.BackgroundTransparency = 1
 SizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SizeLabel.TextSize = 16
 SizeLabel.Font = Enum.Font.SourceSans
 SizeLabel.TextXAlignment = Enum.TextXAlignment.Left
-SizeLabel.Text = "Hitbox Size: 2"
+SizeLabel.Text = "Hitbox Size:"
 SizeLabel.Parent = SizeFrame
 
-local SizeSlider = Instance.new("Frame")
-SizeSlider.Name = "SizeSlider"
-SizeSlider.Size = UDim2.new(1, 0, 0, 6)
-SizeSlider.Position = UDim2.new(0, 0, 0.5, 0)
-SizeSlider.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
-SizeSlider.BorderSizePixel = 0
-SizeSlider.Parent = SizeFrame
-
-local SizeIndicator = Instance.new("Frame")
-SizeIndicator.Name = "SizeIndicator"
-SizeIndicator.Size = UDim2.new(0, 16, 0, 16)
-SizeIndicator.Position = UDim2.new(0.2, -8, 0.5, -8)
-SizeIndicator.BackgroundColor3 = Color3.fromRGB(65, 175, 255)
-SizeIndicator.BorderSizePixel = 0
-SizeIndicator.Parent = SizeSlider
+local SizeInput = Instance.new("TextBox")
+SizeInput.Name = "SizeInput"
+SizeInput.Size = UDim2.new(0.5, -10, 0, 30)
+SizeInput.Position = UDim2.new(0.5, 0, 0.5, -15)
+SizeInput.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+SizeInput.BorderSizePixel = 0
+SizeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+SizeInput.TextSize = 16
+SizeInput.Font = Enum.Font.SourceSans
+SizeInput.Text = "2"
+SizeInput.PlaceholderText = "Enter size..."
+SizeInput.ClearTextOnFocus = false
+SizeInput.Parent = SizeFrame
 
 -- Color Picker
 local ColorFrame = Instance.new("Frame")
 ColorFrame.Name = "ColorFrame"
 ColorFrame.Size = UDim2.new(1, 0, 0, 140)
-ColorFrame.Position = UDim2.new(0, 0, 0, 140)
+ColorFrame.Position = UDim2.new(0, 0, 0, 120)
 ColorFrame.BackgroundTransparency = 1
 ColorFrame.Parent = ContentFrame
 
@@ -194,11 +192,11 @@ for i, colorInfo in ipairs(colors) do
     ColorButtonLabel.Parent = ColorButton
 end
 
--- Target selection section
+-- Target management section
 local TargetFrame = Instance.new("Frame")
 TargetFrame.Name = "TargetFrame"
-TargetFrame.Size = UDim2.new(1, 0, 0, 50)
-TargetFrame.Position = UDim2.new(0, 0, 0, 290)
+TargetFrame.Size = UDim2.new(1, 0, 0, 130)
+TargetFrame.Position = UDim2.new(0, 0, 0, 260)
 TargetFrame.BackgroundTransparency = 1
 TargetFrame.Parent = ContentFrame
 
@@ -210,29 +208,103 @@ TargetLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TargetLabel.TextSize = 16
 TargetLabel.Font = Enum.Font.SourceSans
 TargetLabel.TextXAlignment = Enum.TextXAlignment.Left
-TargetLabel.Text = "No Target Selected"
+TargetLabel.Text = "Select Targets"
 TargetLabel.Parent = TargetFrame
+
+local TargetScrollFrame = Instance.new("ScrollingFrame")
+TargetScrollFrame.Name = "TargetScrollFrame"
+TargetScrollFrame.Size = UDim2.new(1, 0, 0, 80)
+TargetScrollFrame.Position = UDim2.new(0, 0, 0, 25)
+TargetScrollFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+TargetScrollFrame.BorderSizePixel = 0
+TargetScrollFrame.ScrollBarThickness = 4
+TargetScrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+TargetScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+TargetScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+TargetScrollFrame.Parent = TargetFrame
+
+local TargetListLayout = Instance.new("UIListLayout")
+TargetListLayout.Name = "TargetListLayout"
+TargetListLayout.Padding = UDim.new(0, 2)
+TargetListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TargetListLayout.Parent = TargetScrollFrame
 
 local SelectTargetButton = Instance.new("TextButton")
 SelectTargetButton.Name = "SelectTargetButton"
-SelectTargetButton.Size = UDim2.new(1, 0, 0, 30)
-SelectTargetButton.Position = UDim2.new(0, 0, 0, 20)
+SelectTargetButton.Size = UDim2.new(0.48, 0, 0, 25)
+SelectTargetButton.Position = UDim2.new(0, 0, 1, -25)
 SelectTargetButton.BackgroundColor3 = Color3.fromRGB(65, 175, 255)
 SelectTargetButton.BorderSizePixel = 0
 SelectTargetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-SelectTargetButton.TextSize = 16
+SelectTargetButton.TextSize = 14
 SelectTargetButton.Font = Enum.Font.SourceSansBold
-SelectTargetButton.Text = "Select Target"
+SelectTargetButton.Text = "Add Target"
 SelectTargetButton.Parent = TargetFrame
+
+local SelectAllButton = Instance.new("TextButton")
+SelectAllButton.Name = "SelectAllButton"
+SelectAllButton.Size = UDim2.new(0.48, 0, 0, 25)
+SelectAllButton.Position = UDim2.new(0.52, 0, 1, -25)
+SelectAllButton.BackgroundColor3 = Color3.fromRGB(75, 165, 75)
+SelectAllButton.BorderSizePixel = 0
+SelectAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SelectAllButton.TextSize = 14
+SelectAllButton.Font = Enum.Font.SourceSansBold
+SelectAllButton.Text = "Select All Players"
+SelectAllButton.Parent = TargetFrame
 
 -- Script Variables
 local hitboxEnabled = false
 local hitboxSize = 2
 local hitboxColor = colors[3].color -- Default blue
-local targetPlayer = nil
-local hitboxPart = nil
+local targetPlayers = {}
 local originalCharacterParts = {}
 local modifiedParts = {}
+
+-- Create target entry in the list
+local function createTargetEntry(player)
+    local entry = Instance.new("Frame")
+    entry.Name = player.Name .. "_Entry"
+    entry.Size = UDim2.new(1, -10, 0, 25)
+    entry.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    entry.BorderSizePixel = 0
+    entry.Parent = TargetScrollFrame
+    
+    local playerName = Instance.new("TextLabel")
+    playerName.Name = "PlayerName"
+    playerName.Size = UDim2.new(0.7, 0, 1, 0)
+    playerName.Position = UDim2.new(0, 5, 0, 0)
+    playerName.BackgroundTransparency = 1
+    playerName.TextColor3 = Color3.fromRGB(255, 255, 255)
+    playerName.TextSize = 14
+    playerName.Font = Enum.Font.SourceSans
+    playerName.TextXAlignment = Enum.TextXAlignment.Left
+    playerName.Text = player.Name
+    playerName.Parent = entry
+    
+    local removeButton = Instance.new("TextButton")
+    removeButton.Name = "RemoveButton"
+    removeButton.Size = UDim2.new(0.3, -10, 1, -6)
+    removeButton.Position = UDim2.new(0.7, 5, 0, 3)
+    removeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+    removeButton.BorderSizePixel = 0
+    removeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    removeButton.TextSize = 14
+    removeButton.Font = Enum.Font.SourceSansBold
+    removeButton.Text = "Remove"
+    removeButton.Parent = entry
+    
+    removeButton.MouseButton1Click:Connect(function()
+        -- Restore character if needed
+        if targetPlayers[player] and hitboxEnabled then
+            restoreOriginalCharacter(player)
+        end
+        targetPlayers[player] = nil
+        entry:Destroy()
+    end)
+    
+    return entry
+end
 
 -- Handle toggle button click
 local function updateToggle()
@@ -240,16 +312,20 @@ local function updateToggle()
         ToggleIndicator:TweenPosition(UDim2.new(0, 28, 0.5, -10), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
         ToggleButton.BackgroundColor3 = Color3.fromRGB(65, 175, 255)
         
-        -- Create hitbox if we have a target
-        if targetPlayer and targetPlayer.Character then
-            createHitbox()
+        -- Apply hitbox to all targets
+        for player, _ in pairs(targetPlayers) do
+            if player and player.Character then
+                createHitbox(player)
+            end
         end
     else
         ToggleIndicator:TweenPosition(UDim2.new(0, 2, 0.5, -10), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
         ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
         
-        -- Restore original character settings
-        restoreOriginalCharacter()
+        -- Restore original character settings for all targets
+        for player, _ in pairs(targetPlayers) do
+            restoreOriginalCharacter(player)
+        end
     end
 end
 
@@ -260,36 +336,24 @@ ToggleButton.InputBegan:Connect(function(input)
     end
 end)
 
--- Handle size slider
-local isDragging = false
-
-SizeSlider.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = true
-    end
-end)
-
-SizeSlider.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        isDragging = false
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local sizeFrame = SizeSlider.AbsolutePosition.X
-        local maxSize = SizeSlider.AbsoluteSize.X
-        local mousePos = input.Position.X
-        local relativePos = math.clamp((mousePos - sizeFrame) / maxSize, 0, 1)
+-- Handle size input change
+SizeInput.FocusLost:Connect(function(enterPressed)
+    local inputText = SizeInput.Text
+    local newSize = tonumber(inputText)
+    
+    if newSize and newSize > 0 then
+        hitboxSize = newSize
+        SizeInput.Text = tostring(hitboxSize)
         
-        SizeIndicator.Position = UDim2.new(relativePos, -8, 0.5, -8)
-        hitboxSize = math.floor(relativePos * 10) + 1
-        SizeLabel.Text = "Hitbox Size: " .. hitboxSize
-        
-        -- Update hitbox if it exists
-        if hitboxEnabled and targetPlayer then
-            updateHitbox()
+        -- Update hitboxes if enabled
+        if hitboxEnabled then
+            for player, _ in pairs(targetPlayers) do
+                updateHitbox(player)
+            end
         end
+    else
+        -- Reset to previous value if invalid input
+        SizeInput.Text = tostring(hitboxSize)
     end
 end)
 
@@ -315,10 +379,12 @@ for _, colorInfo in ipairs(colors) do
                     end
                 end
                 
-                -- Update hitbox if it exists
-                if hitboxEnabled and targetPlayer then
-                    for _, part in pairs(modifiedParts) do
-                        part.Color = hitboxColor
+                -- Update hitbox color for all targets
+                if hitboxEnabled then
+                    for player, parts in pairs(modifiedParts) do
+                        for _, part in pairs(parts) do
+                            part.Color = hitboxColor
+                        end
                     end
                 end
             end
@@ -337,38 +403,56 @@ SelectTargetButton.MouseButton1Click:Connect(function()
             local character = target:FindFirstAncestorOfClass("Model")
             if character then
                 local player = Players:GetPlayerFromCharacter(character)
-                if player and player ~= LocalPlayer then
-                    -- If we had a previous target, restore their character
-                    if targetPlayer and targetPlayer ~= player then
-                        restoreOriginalCharacter()
-                    end
-                    
-                    targetPlayer = player
-                    TargetLabel.Text = "Target: " .. player.Name
+                if player and player ~= LocalPlayer and not targetPlayers[player] then
+                    -- Add player to targets
+                    targetPlayers[player] = true
+                    createTargetEntry(player)
                     
                     -- Save original character state
-                    saveOriginalCharacter()
+                    saveOriginalCharacter(player)
                     
                     -- Create hitbox if enabled
                     if hitboxEnabled then
-                        createHitbox()
+                        createHitbox(player)
                     end
                 end
             end
         end
         
-        SelectTargetButton.Text = "Select Target"
+        SelectTargetButton.Text = "Add Target"
         connection:Disconnect()
     end)
 end)
 
+-- Handle select all players
+SelectAllButton.MouseButton1Click:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and not targetPlayers[player] then
+            -- Add player to targets
+            targetPlayers[player] = true
+            createTargetEntry(player)
+            
+            -- Save original character state
+            saveOriginalCharacter(player)
+            
+            -- Create hitbox if enabled
+            if hitboxEnabled then
+                createHitbox(player)
+            end
+        end
+    end
+end)
+
 -- Save original character state
-function saveOriginalCharacter()
-    originalCharacterParts = {}
-    if targetPlayer and targetPlayer.Character then
-        for _, part in pairs(targetPlayer.Character:GetDescendants()) do
+function saveOriginalCharacter(player)
+    if not originalCharacterParts[player] then
+        originalCharacterParts[player] = {}
+    end
+    
+    if player and player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
             if part:IsA("BasePart") then
-                originalCharacterParts[part] = {
+                originalCharacterParts[player][part] = {
                     size = part.Size,
                     transparency = part.Transparency,
                     collisionGroupId = part.CollisionGroupId
@@ -378,21 +462,69 @@ function saveOriginalCharacter()
     end
 end
 
+-- Setup hitbox collision detection
+function setupHitboxCollision(part, player)
+    part.Touched:Connect(function(hit)
+        -- Check if the hit is from a damage source
+        local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+        
+        local damageSource = nil
+        
+        -- Case 1: Hit is a bullet/projectile
+        if hit:FindFirstAncestorOfClass("Tool") or hit:IsA("BasePart") and hit.Name:lower():match("bullet") then
+            damageSource = hit
+            
+        -- Case 2: Hit is part of a weapon/tool
+        elseif hit:IsA("BasePart") and hit.Parent:IsA("Tool") then
+            damageSource = hit.Parent
+        end
+        
+        -- If we found a damage source, apply damage to player
+        if damageSource then
+            local damage = 10 -- Default damage value
+            
+            -- Get damage value from tool if available
+            if damageSource:FindFirstChild("Damage") then
+                damage = damageSource.Damage.Value
+            end
+            
+            -- Apply damage to player
+            humanoid:TakeDamage(damage)
+            
+            -- Visual feedback
+            local hitEffect = Instance.new("Part")
+            hitEffect.Size = Vector3.new(0.2, 0.2, 0.2)
+            hitEffect.Position = hit.Position
+            hitEffect.Anchored = true
+            hitEffect.CanCollide = false
+            hitEffect.Transparency = 0.5
+            hitEffect.Color = Color3.fromRGB(255, 0, 0)
+            hitEffect.Material = Enum.Material.Neon
+            hitEffect.Parent = workspace
+            game:GetService("Debris"):AddItem(hitEffect, 0.5)
+        end
+    end)
+end
+
 -- Create functional hitbox
-function createHitbox()
-    modifiedParts = {}
+function createHitbox(player)
+    if not modifiedParts[player] then
+        modifiedParts[player] = {}
+    end
     
-    if targetPlayer and targetPlayer.Character then
+    if player and player.Character then
         -- First, find the HumanoidRootPart to determine character center
-        local hrp = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local hrp = player.Character:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
         
         -- Find all collision parts
-        for _, part in pairs(targetPlayer.Character:GetDescendants()) do
+        for _, part in pairs(player.Character:GetDescendants()) do
             if part:IsA("BasePart") and part.CanCollide then
                 -- Create a hitbox expansion for this part
                 expandPart(part)
-                table.insert(modifiedParts, part)
+                setupHitboxCollision(part, player) -- Add collision detection
+                table.insert(modifiedParts[player], part)
             end
         end
         
@@ -415,16 +547,16 @@ function createHitbox()
         weld.Part1 = hrp
         weld.Parent = mainHitbox
         
+        -- Setup collision detection for the main hitbox
+        setupHitboxCollision(mainHitbox, player)
+        
         -- Ensure shots can hit this part
-        mainHitbox.Parent = targetPlayer.Character
-        table.insert(modifiedParts, mainHitbox)
+        mainHitbox.Parent = player.Character
+        table.insert(modifiedParts[player], mainHitbox)
         
         -- Set collision properties
-        -- This ensures the hitbox interacts with weapons/projectiles
-        for _, part in pairs(modifiedParts) do
-            -- Make sure the hitbox can be detected by raycasts (for weapons)
+        for _, part in pairs(modifiedParts[player]) do
             part.CanQuery = true
-            -- Make it interact with projectiles/weapons
             part.CanTouch = true
         end
     end
@@ -433,7 +565,7 @@ end
 -- Expand a single part
 function expandPart(part)
     -- Make part slightly larger
-    local expansion = hitboxSize * 0.2 -- Scale factor based on slider
+    local expansion = hitboxSize * 0.2 -- Scale factor based on size input
     part.Size = part.Size * (1 + expansion)
     
     -- Make it partially transparent so we can see the visual effect
@@ -441,58 +573,94 @@ function expandPart(part)
     part.Color = hitboxColor
 end
 
--- Update all hitbox parts
-function updateHitbox()
-    restoreOriginalCharacter()
-    createHitbox()
+-- Update hitbox for a specific player
+function updateHitbox(player)
+    restoreOriginalCharacter(player)
+    createHitbox(player)
 end
 
--- Restore original character
-function restoreOriginalCharacter()
-    for part, props in pairs(originalCharacterParts) do
-        if part and part:IsA("BasePart") and part.Parent then
-            part.Size = props.size
-            part.Transparency = props.transparency
-            part.CollisionGroupId = props.collisionGroupId
+-- Restore original character for a specific player
+function restoreOriginalCharacter(player)
+    if originalCharacterParts[player] then
+        for part, props in pairs(originalCharacterParts[player]) do
+            if part and part:IsA("BasePart") and part.Parent then
+                part.Size = props.size
+                part.Transparency = props.transparency
+                part.CollisionGroupId = props.collisionGroupId
+            end
         end
     end
     
     -- Remove any created parts
-    for _, part in pairs(modifiedParts) do
-        if part and part.Name == "MainHitbox" then
-            part:Destroy()
-        end 
+    if modifiedParts[player] then
+        for _, part in pairs(modifiedParts[player]) do
+            if part and part.Name == "MainHitbox" then
+                part:Destroy()
+            end 
+        end
+        
+        modifiedParts[player] = {}
     end
-    
-    modifiedParts = {}
 end
 
 -- Handle player leaving
 Players.PlayerRemoving:Connect(function(player)
-    if player == targetPlayer then
-        targetPlayer = nil
-        TargetLabel.Text = "No Target Selected"
-        restoreOriginalCharacter()
-        originalCharacterParts = {}
+    if targetPlayers[player] then
+        targetPlayers[player] = nil
+        
+        -- Find and remove entry from the list
+        local entry = TargetScrollFrame:FindFirstChild(player.Name .. "_Entry")
+        if entry then
+            entry:Destroy()
+        end
+        
+        -- Clean up saved data
+        originalCharacterParts[player] = nil
+        modifiedParts[player] = nil
     end
 end)
 
 -- Handle character changes
 game.Workspace.DescendantAdded:Connect(function(descendant)
-    if hitboxEnabled and targetPlayer and descendant:IsA("Model") and descendant:FindFirstChild("Humanoid") then
+    if hitboxEnabled and descendant:IsA("Model") and descendant:FindFirstChild("Humanoid") then
         local player = Players:GetPlayerFromCharacter(descendant)
-        if player and player == targetPlayer then
+        if player and targetPlayers[player] then
             -- Character respawned or changed, update the hitbox
             wait(0.5) -- Wait for character to fully load
-            saveOriginalCharacter()
-            createHitbox()
+            saveOriginalCharacter(player)
+            createHitbox(player)
         end
+    end
+end)
+
+-- Handle new players joining
+Players.PlayerAdded:Connect(function(player)
+    -- Check if "select all" is active, add them automatically
+    local selectAllActive = false
+    
+    if selectAllActive and player ~= LocalPlayer then
+        targetPlayers[player] = true
+        createTargetEntry(player)
+        
+        -- When their character loads
+        player.CharacterAdded:Connect(function(character)
+            if targetPlayers[player] then
+                wait(0.5) -- Wait for character to load
+                saveOriginalCharacter(player)
+                if hitboxEnabled then
+                    createHitbox(player)
+                end
+            end
+        end)
     end
 end)
 
 -- Close button
 CloseButton.MouseButton1Click:Connect(function()
-    restoreOriginalCharacter()
+    -- Restore all characters
+    for player, _ in pairs(targetPlayers) do
+        restoreOriginalCharacter(player)
+    end
     ScreenGui:Destroy()
 end)
 
@@ -503,4 +671,4 @@ if blueButton then
     blueButton.BorderSizePixel = 3
 end
 
-print("Hitbox Expander loaded successfully!")
+print("Hitbox Expander with Damage Redirection loaded successfully!")
